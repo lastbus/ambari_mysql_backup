@@ -2,9 +2,9 @@
 #-*-encoding: UTF-8-*-
 import time, sched
 import threading
-from xml.etree import ElementTree
 import os
 import datetime
+import logging
 
 def get_next_interval(conf):
     if conf.has_key("init"):
@@ -26,50 +26,39 @@ s = sched.scheduler(time.time, time.sleep)
 
 kvs = {}
 
-tree = ElementTree.parse("/etc/mysql_backup/conf/mysql_backup.xml")
-root = tree.getroot()
-for p in root.findall('property'):
-    name = p.find('name').text
-    value = p.find('value').text
-    kvs[name] = value
-
-# daemon_dir = kvs["mysql.backup.daemon.pid.dir"]
-# daemon_pid_file = kvs["mysql.backup.daemon.pid.file"]
-# backup_hour = kvs["mysql.backup.hour"]
-# backup_minute = kvs["mysql.backup.minute"]
-# backup_local_dir = kvs["mysql.backup.local.directory"]
-# backup_hdfs_dir = kvs["mysql.backup.hdfs.directory"]
-# backup_log = kvs["mysql.backup.log"]
+for line in open('/etc/mysql_backup/conf/mysql_backup.properties'):
+	if len(line) >= 3:
+		w = line.strip().split("=")
+		kvs[w[0]] = w[1]
 
 backup_databases = kvs['mysql.backup.databases'].split(',')
 backup_dir_local = kvs['mysql.backup.local.directory']
 backup_dir_hdfs = kvs['mysql.backup.hdfs.directory']
 backup_log_file = kvs['mysql.backup.log']
 
-log = open(backup_log_file, 'w')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s', datetime='%a, %d %b %Y %H:%M:%S', filename=backup_log_file, filemode='a')
+
 now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-log.writelines(now + "  MySQL Backup daemon start...\n")
-log.write("configuration parameters:\n")
+logging.info(now + "  MySQL Backup daemon start...\n")
+logging.info("configuration parameters:\n")
 # print configuration parameters
 for kv in kvs:
-    log.write(kv + " : " + kvs[kv] + "\n")
+    logging.info(kv + " : " + kvs[kv] + "\n")
 
-log.flush()
 
 def mysql_backup(databases):
-    log.write("\n----------------- backup -----------------------\n")
+    logging.info("\n----------------- backup -----------------------\n")
     for database in databases:
-        log.write("begin time:\t" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()) + "\n")
-        log.write("thread id:\t" + threading.current_thread().getName() + "\n")
-        log.write("backup mysql database :  " + database + "\n")
+        logging.info("begin time:\t" + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()) + "\n")
+        logging.info("thread id:\t" + threading.current_thread().getName() + "\n")
+        logging.info("backup mysql database :  " + database + "\n")
         # cmd = 'mysqldump -uroot -pManWei1234_  ' + database + " > " + database + ".bk." + time.strftime("%Y%m%d%H%M%S")
         cmd = "mysqldump -uroot -pManWei1234_  %s > %s/%s.bk.%s" % (database, backup_dir_local, database, time.strftime("%Y%m%d%H%M%S"))
-        log.write(cmd + "\n")
+        logging.info(cmd + "\n")
         lines = os.popen(cmd).readlines()
-        log.write(str(lines))
+        logging.info(str(lines))
         time.sleep(5)
-        log.write('\nend time:\t' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "\n")
-        log.flush()
+        logging.info('\nend time:\t' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "\n")
 
 def start_mysql_backup_daemon():
     try:
@@ -81,7 +70,7 @@ def start_mysql_backup_daemon():
             s.run()
             kvs['init'] = 'True'
     except Exception, e:
-        log.write("%s:  ERROR:  %s" %(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()), str(e)))
+        logging.info("%s:  ERROR:  %s" %(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()), str(e)))
     finally:
         log.close()
 start_mysql_backup_daemon()

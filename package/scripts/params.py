@@ -26,4 +26,4 @@ backup_local_dir = default("/configurations/mysql_backup/mysql.backup.local.dire
 backup_hdfs_dir = default("/configurations/mysql_backup/mysql.backup.hdfs.directory", "mysql_backup")
 backup_log = default("/configurations/mysql_backup/mysql.backup/mysql.backup.log", "/var/log/mysql_backup.log")
 
-
+mysql_backup_properties_map = config['configurations']['mysql_backup']

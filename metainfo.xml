@@ -6,7 +6,7 @@
             <name>MYSQL_BACKUP</name>
             <displayName>mysql_backup</displayName>
             <comment>backup mysql database</comment>
-            <version>1.0.0</version>
+            <version>0.1</version>
             <components>
                 <component>
                     <name>Mysql Backup</name>
@@ -26,6 +26,9 @@
                     </configFiles>
                 </component>
             </components>
+	  <configuration-dependencies>
+		<config-type>mysql_backup</config-type>
+	  </configuration-dependencies>
         </service>
     </services>
 </metainfo>
